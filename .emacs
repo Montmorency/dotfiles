@@ -2,12 +2,15 @@
 ;;He brought us through recursion theory and now he is our
 ;;guide through emacs. Starting from his configuration and then
 ;;drifting into new territory.
+
 (setq lexical-binding t)
 (setq gc-cons-threshold 100000000)
 (setq use-package-always-ensure t)
 
 ;;(use-package exec-path-from shell
 ;; :config (exec-path-from-shell-initialize))
+
+;;[association lists](https://www.gnu.org/software/emacs/manual/html_node/elisp/Association-Lists.html)
 
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
@@ -45,10 +48,6 @@
   (package-refresh-contents)
   (package-install 'use-package))
 
-
-
-
-;; Patrick Thompson is Our Guide Here:: https://blog.sumtypeofway.com/posts/emacs-config.html
 (setq
    ;; No need to see GNU agitprop.
    inhibit-startup-screen t
@@ -102,6 +101,8 @@
 (setq custom-file (make-temp-file ""))
 (setq custom-safe-themes t)
 
+(require 'recentf)
+(add-to-list 'recentf-exclude "\\elpa")
 
 ;;"actively hostile key-bindings".;
 ;;HL not sure about this first one? I kind of like opening files this way and they aren't readonly.
@@ -110,7 +111,8 @@
 ;;(unbind-key "C-z") ;; suspend-frame
 ;;(unbind-key "M-o") ;; facemenu-mode
 ;;(unbind-key "<mouse-2>") ;; pasting with mouse-wheel click
-(unbind-key "<C-wheel-down>") ;; text scale adjust
+;;(unbind-key "<C-wheel-down>") ;; text scale adjust
+;;(unbind-key "<C-wheel-up>") ;; text scale adjust
 
 (add-hook 'before-save-hook #'delete-trailing-whitespace)
 (setq require-final-newline t)
@@ -121,13 +123,13 @@
 
 ;;undo undo undo!
 (use-package undo-tree
-  :diminish
+;;  :diminish
   :bind (("C-c _" . undo-tree-visualize))
   :config
   (global-undo-tree-mode +1)
   (unbind-key "M-_" undo-tree-map))
 
-;like so many this is a nother southern ontario programmer.
+;like so many this is another southern ontario programmer.
 ;https://github.com/hlissner/emacs-doom-themes/issues/314
 ;;disabling warnings on safe variables defined with defvar.
 (setq enable-local-variables :all)
@@ -155,11 +157,14 @@
           doom-challenger-deep-brighter-modeline t)
     (load-theme chosen-theme)))
 
+;;(use-package diminish
+;;  :config (diminish 'eldoc-mode))
+
 (use-package doom-modeline
   :config (doom-modeline-mode))
 
 (use-package dimmer
-  :custom (dimmer-fraction 0.2)
+  :custom (dimmer-fraction 0.1)
   :config (dimmer-mode))
 
 (show-paren-mode)
@@ -177,6 +182,14 @@
 
 (bind-key "C-c e" #'open-init-file)
 
+
+(defun open-cheet-sheet ()
+  "Open a personalized Emacs cheat sheet."
+  (interactive)
+  (find-file "~/.emacs-cheets.md"))
+
+(bind-key "C-c h" #'open-cheet-sheet)
+
 (defun screenshot-svg ()
   "Save a screenshot of the current frame as an SVG image.
 Saves to a temp file and puts the filename in the kill ring."
@@ -188,24 +201,28 @@ Saves to a temp file and puts the filename in the kill ring."
     (kill-new filename)
     (message filename)))
 
-
-(defun insert-current-date () (interactive)
-    (insert (shell-command-to-string "echo -n $(date +%a %b %d %Y)")))
+(defun insert-current-date ()
+  "Insert the current date."
+  (interactive)
+  (insert (shell-command-to-string "echo -n $(date +%a %b %d %Y)")))
 
 ;;Some HL bindings
 (bind-key "C-c d" #'insert-current-date)
 
-(bind-key "C-c r" #'replace-string)
 
+
+;;(bind-key "C-c r" #'replace-string)
 ;;dired related hooks for darwin
 (defun dired-up-directory-same-buffer ()
   "Go up in the same buffer."
   (find-alternate-file ".."))
 
 (defun my-dired-mode-hook ()
+  "Dired hooks."
   (put 'dired-find-alternate-file 'disabled nil) ; Disables the warning.
   (define-key dired-mode-map (kbd "RET") 'dired-find-alternate-file)
-  (define-key dired-mode-map (kbd "^") 'dired-up-directory-same-buffer))
+  (define-key dired-mode-map (kbd "^") 'dired-up-directory-same-buffer)
+  )
 
 (add-hook 'dired-mode-hook #'my-dired-mode-hook)
 
@@ -224,48 +241,171 @@ Saves to a temp file and puts the filename in the kill ring."
   :bind (("C-c u" . my-duplicate-thing)
          ("C-c C-u" . my-duplicate-thing)))
 
-
-
 (use-package flycheck
   :ensure t
-  :init (global-flycheck-mode))
-
-(defcustom flycheck-display-errors-delay 5 "Delay for flycheck to pop up irritating buffer.")
-
-(use-package lsp-mode
-  :init
-  ;; set prefix for lsp-command-keymap (few alternatives - "C-l", "C-c l")
-  (setq lsp-keymap-prefix "C-c l")
-  :hook (;; replace XXX-mode with concrete major-mode(e. g. python-mode)
-         (haskell-mode . lsp))
-         ;; if you want which-key integration
-         ;;(lsp-mode . lsp-enable-which-key-integration))
-  :commands lsp)
-
-(add-hook 'haskell-mode-hook #'lsp)
-(add-hook 'haskell-literate-mode-hook #'lsp)
-
-(require 'ido)
-(setq ido-enable-flex-matching t)
-(setq ido-everywhere t)
-(setq ido-file-extensions-order '(".hs" ".js" ".css" ".md" ".txt"))
-(setq ido-ignore-extensions t)
-(ido-mode t)
-
-;;Language Specific Configs
-;;Haskell
-(use-package dante
-  :ensure t
-  :after haskell-mode
-  :commands 'dante-mode
-  :init
-  ;;(add-hook 'haskell-mode-hook 'flycheck-mode)
-  ;; OR for flymake support:
-  ;;(add-hook 'haskell-mode-hook 'flymake-mode)
-  ;;(remove-hook 'flymake-diagnostic-functions 'flymake-proc-legacy-flymake)
-  ;;(add-hook 'haskell-mode-hook 'dante-mode)
+  :init (global-flycheck-mode)
   )
 
+;;ido was going nicely but going to try
+;;ivy
+;;https://oremacs.com/swiper/
+;;https://sam217pa.github.io/2016/09/13/from-helm-to-ivy/
+(use-package ivy
+  :defer 0.1
+  :custom
+  (ivy-use-virtual-buffers t)
+  (ivy-count-format "(%d/%d) ")
+  :config
+  (ivy-mode 1)
+
+  :bind (("C-c C-r" . #'ivy-resume)
+         ("C-c s"   . #'swiper-thing-at-point)
+         ("C-s"     . #'swiper))
+ )
+
+(use-package ivy-rich
+  :custom
+  (ivy-virtual-abbreviate 'full)
+  (ivy-rich-switch-buffer-align-virtual-buffer nil)
+  (ivy-rich-path-style 'full)
+  :config
+  (setcdr (assq t ivy-format-functions-alist) #'ivy-format-function-line)
+  (ivy-rich-mode)
+  )
+
+;;https://github.com/abo-abo/avy
+;;avy is a GNU Emacs package for jumping to visible text using a char-based decision tree.
+;;See also ace-jump-mode and vim-easymotion - avy uses the same idea.
+;;;;jump-to-line commands mapped to the home rome
+(use-package avy
+  :bind
+  ("C-c l" . avy-goto-line) ;;This one is... nicee.
+  ("C-c j" . avy-goto-char) ;;This one is... ornate.
+  )
+
+;;and the ivy integration for avy
+(use-package ivy-avy)
+
+(use-package counsel
+  :init
+  (counsel-mode 1)
+
+  :bind (("C-c ;" . #'counsel-M-x)
+         ("C-c U" . #'counsel-unicode-char)
+         ("C-c i" . #'counsel-imenu)
+         ("C-x f" . #'counsel-find-file)
+         ("C-c y" . #'counsel-yank-pop)
+         ("C-c r" . #'counsel-recentf)
+         ("C-c v" . #'counsel-switch-buffer-other-window)
+         ("C-c H" . #'counsel-projectile-rg)
+         ("C-h h" . #'counsel-command-history)
+         ("C-x C-f" . #'counsel-find-file)
+         :map ivy-minibuffer-map
+         ("C-r" . counsel-minibuffer-history))
+ :diminish)
+
+(use-package counsel-projectile
+ :bind (("C-c f" . #'counsel-projectile)
+        ("C-c F" . #'counsel-projectile-switch-project)))
+
+;;had to manually package-install deadgrep
+;;not sure why
+(use-package deadgrep
+  :bind (("C-c h" . #'deadgrep))
+  )
+
+(use-package visual-regexp
+  :bind (("C-c r " . #'vr/replace))
+  )
+
+;;overwrite ivy default
+(defun kill-this-buffer ()
+  "Kill the current buffer."
+  (interactive)
+  (kill-buffer nil)
+  )
+
+(bind-key "C-x k" #'kill-this-buffer)
+(bind-key "C-x K" #'kill-buffer)
+
+
+(use-package lsp-mode
+  :commands (lsp lsp-execute-code-action)
+  :hook (
+         ;;(go-mode . lsp-deferred)
+         (lsp-mode . lsp-enable-which-key-integration)
+         (lsp-mode . lsp-diagnostics-modeline-mode))
+  :bind ("C-c C-c" . #'lsp-execute-code-action)
+  :custom
+  (lsp-diagnostics-modeline-scope :project)
+  (lsp-file-watch-threshold 5000)
+  (lsp-response-timeout 2)
+  (lsp-enable-file-watchers nil))
+
+;;https://github.com/emacs-lsp/lsp-ui
+(use-package lsp-ui
+  :disabled
+  :custom
+  (lsp-ui-doc-mode nil)
+  (lsp-ui-doc-delay 0.75)
+  (lsp-ui-doc-max-height 200)
+  (lsp-ui-peek-always-show nil)
+  (lsp-ui-doc-position 'at-point)
+  (lsp-ui-sideline-show-hover nil)
+  :after lsp-mode)
+
+;; (use-package lsp-mode
+;;   :commands (lsp lsp-execute-code-action)
+;;   ;; set prefix for lsp-command-keymap (few alternatives - "C-l", "C-c l")
+;;   :custom
+;;   (lsp-diagnostics-modeline-scope :project)
+;;   (lsp-file-watch-threshold 5000)
+;;   (lsp-response-timeout 2)
+;;   (lsp-enable-file-watchers nil)
+;;   (lsp-keymap-prefix "C-c l")
+;;   :hook (;; replace XXX-mode with concrete major-mode(e. g. python-mode)
+;;          (haskell-mode . lsp))
+;;   )
+
+(use-package lsp-ui
+  :custom
+  (lsp-ui-doc-delay 0.75)
+  (lsp-ui-doc-max-height 200)
+  :after lsp-mode)
+
+(use-package lsp-ivy
+ :after (ivy lsp-mode)
+ )
+
+;; (use-package company
+;;   :diminish
+;;   :bind (("C-." . #'company-complete))
+;;   :hook (prog-mode . company-mode)
+;;   :custom
+;;   (company-dabbrev-downcase nil "Don't downcase returned candidates.")
+;;   (company-show-numbers t "Numbers are helpful.")
+;;   (company-tooltip-limit 20 "The more the merrier.")
+;;   (company-tooltip-idle-delay 0.4 "Faster!")
+;;   (company-async-timeout 20 "Some requests can take a long time. That's fine.")
+;;   :config
+
+;;   ;; Use the numbers 0-9 to select company completion candidates
+;;   (let ((map company-active-map))
+;;     (mapc (lambda (x) (define-key map (format "%d" x)
+;;    `(lambda () (interactive) (company-complete-number ,x))))
+;;    (number-sequence 0 9))))
+;;(use-package company-lsp
+;;  :custom (company-lsp-enable-snippet t)
+;;  :after (company lsp-mode))
+
+;;Think ivy has more integration with lsp than ido
+;;then ido
+;;(require 'ido)
+;;(setq ido-enable-flex-matching t)
+;;(setq ido-everywhere t)
+;;(setq ido-file-extensions-order '(".hs" ".js" ".css" ".md" ".txt"))
+;;(setq ido-ignore-extensions t)
+;;(ido-mode t)
 
 (use-package haskell-mode
   :config
@@ -273,10 +413,42 @@ Saves to a temp file and puts the filename in the kill ring."
     "The Haskell formatter to use. One of: 'ormolu, 'stylish, nil. Set it per-project in .dir-locals."
     :safe 'symbolp
     )
+
+  :bind (:map haskell-mode-map
+              ("C-c a c" . haskell-cabal-visit-file)
+              ("C-c a i" . haskell-navigate-imports)
+              ("C-c M"   . haskell-compile)
+              ("C-c a I" . haskell-navigate-imports-return))
   )
 
-(use-package rust-mode)
 
+(add-hook 'haskell-mode-hook #'lsp)
+(add-hook 'haskell-literate-mode-hook #'lsp)
+
+(use-package rust-mode
+  :hook ((rust-mode . lsp)
+         (rust-mode . lsp-lens-mode)
+         )
+  :custom
+  (rust-format-on-save t)
+  (lsp-rust-server 'rust-analyzer))
+
+(use-package typescript-mode)
+(use-package yaml-mode)
+(use-package dockerfile-mode)
+(use-package toml-mode)
+
+(use-package dhall-mode
+  :ensure t
+  :mode "\\.dhall\\'")
+
+(use-package markdown-mode
+  :bind (("C-c C-s a" . markdown-table-align))
+  :mode ("\\.md$" . gfm-mode))
+
+;; HL fun with setting up windows on start.
+;; When I was using emacs terminal but this caused
+;; other problems.
 (defun halve-other-window-height ()
   "Expand current window to use half of the other window's lines."
   (interactive)
@@ -286,7 +458,7 @@ Saves to a temp file and puts the filename in the kill ring."
 
 
 (defun my-default-window-setup ()
-  "Called by emacs-startup-hook to set up my initial window configuration."
+  "Called by `emacs-startup-hook` to set up my initial window configuration."
     (set-frame-position (selected-frame) 1000 0)
     (set-frame-height
     (selected-frame)
@@ -296,11 +468,14 @@ Saves to a temp file and puts the filename in the kill ring."
     (selected-frame)
     (/ (/ (display-pixel-width) 2) (frame-char-width)))
 
-    (split-window-vertically)
-    (halve-other-window-height)
+;; From When I wanted a little horizontal window for a terminal emulator:
+;;    (split-window-vertically)
+;;    (halve-other-window-height)
   )
 ;;  (find-file "~/txt/todo.org")
 
 (add-hook 'emacs-startup-hook #'my-default-window-setup)
 
-(provide 'init)
+;; (provide 'init)
+;; (provide '.emacs)
+;;; .emacs ends here
