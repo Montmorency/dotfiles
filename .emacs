@@ -71,6 +71,8 @@
 ;; We need the setq-default here because this becomes
 ;; a buffer-local variable when set.
 (setq-default indent-tabs-mode nil)
+;; (setq-default tab-width 4)
+;; (setq indent-line-function 'insert-tab)
 
 (defalias 'yes-or-no-p 'y-or-n-p) ; Accept 'y' in lieu of 'yes'.
 
@@ -204,7 +206,7 @@ Saves to a temp file and puts the filename in the kill ring."
 (defun insert-current-date ()
   "Insert the current date."
   (interactive)
-  (insert (shell-command-to-string "echo -n $(date +%a %b %d %Y)")))
+  (insert (shell-command-to-string "echo -n $(date)")))
 
 ;;Some HL bindings
 (bind-key "C-c d" #'insert-current-date)
@@ -329,13 +331,23 @@ Saves to a temp file and puts the filename in the kill ring."
 (bind-key "C-x K" #'kill-buffer)
 
 
+(use-package magit
+  :diminish magit-auto-revert-mode
+  :diminish auto-revert-mode
+  :bind (("C-c g" . #'magit-status))
+  :custom
+  (magit-repository-directories '(("~/src" . 1)))
+  :config
+  (add-to-list 'magit-no-confirm 'stage-all-changes))
+
+
 (use-package lsp-mode
   :commands (lsp lsp-execute-code-action)
   :hook (
-         ;;(go-mode . lsp-deferred)
          (lsp-mode . lsp-enable-which-key-integration)
-         (lsp-mode . lsp-diagnostics-modeline-mode))
-  :bind ("C-c C-c" . #'lsp-execute-code-action)
+         (lsp-mode . lsp-modeline-diagnostics-mode)
+         (haskell-mode . lsp))
+  :bind ("C-c C-c" . #'lsp-modeline-diagnostics-mode)
   :custom
   (lsp-diagnostics-modeline-scope :project)
   (lsp-file-watch-threshold 5000)
@@ -347,31 +359,24 @@ Saves to a temp file and puts the filename in the kill ring."
   :disabled
   :custom
   (lsp-ui-doc-mode nil)
-  (lsp-ui-doc-delay 0.75)
-  (lsp-ui-doc-max-height 200)
+  (lsp-ui-doc-delay 2.0)
+  (lsp-ui-doc-max-height 400)
   (lsp-ui-peek-always-show nil)
-  (lsp-ui-doc-position 'at-point)
+;;  (lsp-ui-doc-position 'at-point)
+  (lsp-ui-doc-position nil)
   (lsp-ui-sideline-show-hover nil)
   :after lsp-mode)
+
+
 
 ;; (use-package lsp-mode
 ;;   :commands (lsp lsp-execute-code-action)
 ;;   ;; set prefix for lsp-command-keymap (few alternatives - "C-l", "C-c l")
 ;;   :custom
-;;   (lsp-diagnostics-modeline-scope :project)
-;;   (lsp-file-watch-threshold 5000)
-;;   (lsp-response-timeout 2)
-;;   (lsp-enable-file-watchers nil)
 ;;   (lsp-keymap-prefix "C-c l")
 ;;   :hook (;; replace XXX-mode with concrete major-mode(e. g. python-mode)
 ;;          (haskell-mode . lsp))
 ;;   )
-
-(use-package lsp-ui
-  :custom
-  (lsp-ui-doc-delay 0.75)
-  (lsp-ui-doc-max-height 200)
-  :after lsp-mode)
 
 (use-package lsp-ivy
  :after (ivy lsp-mode)
@@ -399,7 +404,6 @@ Saves to a temp file and puts the filename in the kill ring."
 ;;  :after (company lsp-mode))
 
 ;;Think ivy has more integration with lsp than ido
-;;then ido
 ;;(require 'ido)
 ;;(setq ido-enable-flex-matching t)
 ;;(setq ido-everywhere t)
@@ -407,6 +411,7 @@ Saves to a temp file and puts the filename in the kill ring."
 ;;(setq ido-ignore-extensions t)
 ;;(ido-mode t)
 
+;;(setq haskell-indent-spaces 4)
 (use-package haskell-mode
   :config
   (defcustom haskell-formatter 'stylish
@@ -414,16 +419,23 @@ Saves to a temp file and puts the filename in the kill ring."
     :safe 'symbolp
     )
 
+
   :bind (:map haskell-mode-map
               ("C-c a c" . haskell-cabal-visit-file)
               ("C-c a i" . haskell-navigate-imports)
               ("C-c M"   . haskell-compile)
               ("C-c a I" . haskell-navigate-imports-return))
-  )
 
+  :custom
+  (setq haskell_indentation_left_offset 4)
+  (setq haskell_indentation_starter_offset 4)
+  (setq haskell_where_pre_offset 4)
+  (setq haskell_where_post_offset 4)
+  )
 
 (add-hook 'haskell-mode-hook #'lsp)
 (add-hook 'haskell-literate-mode-hook #'lsp)
+
 
 (use-package rust-mode
   :hook ((rust-mode . lsp)
