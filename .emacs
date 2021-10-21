@@ -1,3 +1,4 @@
+;;Commentary
 ;;https://blog.sumtypeofway.com/posts/emacs-config.html
 ;;He brought us through recursion theory and now he is our
 ;;guide through emacs. Starting from his configuration and then
@@ -7,8 +8,6 @@
 (setq gc-cons-threshold 100000000)
 (setq use-package-always-ensure t)
 
-;;(use-package exec-path-from shell
-;; :config (exec-path-from-shell-initialize))
 
 ;;[association lists](https://www.gnu.org/software/emacs/manual/html_node/elisp/Association-Lists.html)
 
@@ -20,7 +19,6 @@
  '(package-selected-packages '(doom-themes nix-mode attrap direnv envrc dante))
  '(safe-local-variable-values
    '((haskell-process-type . ghci)
-     (dante-repl-command-line "ghci")
      (buffer-file-coding-system . utf-8-unix))))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
@@ -152,18 +150,21 @@
   (tooltip-mode -1))
 
 (use-package doom-themes
+  :ensure t
   :config
-  (let ((chosen-theme 'doom-moonlight))
-    (doom-themes-org-config)
-    (setq doom-challenger-deep-brighter-comments t
-          doom-challenger-deep-brighter-modeline t)
-    (load-theme chosen-theme)))
+  (setq doom-challenger-deep-brighter-comments t
+        doom-challenger-deep-brighter-modeline t)
+  (doom-themes-org-config)
+  (load-theme 'doom-moonlight t)
+  )
 
 ;;(use-package diminish
 ;;  :config (diminish 'eldoc-mode))
 
 (use-package doom-modeline
-  :config (doom-modeline-mode))
+  :ensure t
+  :init (doom-modeline-mode 1)
+  )
 
 (use-package dimmer
   :custom (dimmer-fraction 0.1)
@@ -279,14 +280,6 @@ Saves to a temp file and puts the filename in the kill ring."
 ;;avy is a GNU Emacs package for jumping to visible text using a char-based decision tree.
 ;;See also ace-jump-mode and vim-easymotion - avy uses the same idea.
 ;;;;jump-to-line commands mapped to the home rome
-(use-package avy
-  :bind
-  ("C-c l" . avy-goto-line) ;;This one is... nicee.
-  ("C-c j" . avy-goto-char) ;;This one is... ornate.
-  )
-
-;;and the ivy integration for avy
-(use-package ivy-avy)
 
 (use-package counsel
   :init
@@ -340,6 +333,32 @@ Saves to a temp file and puts the filename in the kill ring."
   :config
   (add-to-list 'magit-no-confirm 'stage-all-changes))
 
+(use-package avy
+  :bind
+  (("C-c l" . avy-goto-line) ;;This one is... nicee.
+   ("C-c j" . avy-goto-char)) ;;This one is... ornate.
+  )
+
+;;and the ivy integration for avy
+(use-package ivy-avy)
+
+
+
+(use-package haskell-mode
+  :config
+  (setq haskell-indentation-left-offset 4)
+  (setq haskell-indentation-starter-offset 4)
+;;  (setq haskell-where-pre-offset 4)
+;;  (setq haskell-where-post-offset 4)
+;;  (setq haskell-indentation-ifte-offset 4)
+  :bind (:map haskell-mode-map
+              ("C-c M"   . haskell-compile)
+;;              ("C-c a c" . haskell-cabal-visit-file)
+;;              ("C-c a i" . haskell-navigate-imports)
+;;              ("C-c a I" . haskell-navigate-imports-return)
+              )
+  )
+
 
 (use-package lsp-mode
   :commands (lsp lsp-execute-code-action)
@@ -349,6 +368,7 @@ Saves to a temp file and puts the filename in the kill ring."
          (haskell-mode . lsp))
   :bind ("C-c C-c" . #'lsp-modeline-diagnostics-mode)
   :custom
+  ;;(lsp-keymap-prefix "C-c l") conflicts with avy
   (lsp-diagnostics-modeline-scope :project)
   (lsp-file-watch-threshold 5000)
   (lsp-response-timeout 2)
@@ -360,26 +380,15 @@ Saves to a temp file and puts the filename in the kill ring."
   :custom
   (lsp-ui-doc-mode nil)
   (lsp-ui-doc-delay 2.0)
-  (lsp-ui-doc-max-height 400)
+  (lsp-ui-doc-max-height 600)
   (lsp-ui-peek-always-show nil)
-;;  (lsp-ui-doc-position 'at-point)
   (lsp-ui-doc-position nil)
   (lsp-ui-sideline-show-hover nil)
   :after lsp-mode)
 
-
-
-;; (use-package lsp-mode
-;;   :commands (lsp lsp-execute-code-action)
-;;   ;; set prefix for lsp-command-keymap (few alternatives - "C-l", "C-c l")
-;;   :custom
-;;   (lsp-keymap-prefix "C-c l")
-;;   :hook (;; replace XXX-mode with concrete major-mode(e. g. python-mode)
-;;          (haskell-mode . lsp))
-;;   )
-
 (use-package lsp-ivy
- :after (ivy lsp-mode)
+  :after (ivy lsp-mode)
+  :bind ("C-c a" . lsp-ivy-workspace-symbol)
  )
 
 ;; (use-package company
@@ -412,30 +421,23 @@ Saves to a temp file and puts the filename in the kill ring."
 ;;(ido-mode t)
 
 ;;(setq haskell-indent-spaces 4)
-(use-package haskell-mode
-  :config
-  (defcustom haskell-formatter 'stylish
-    "The Haskell formatter to use. One of: 'ormolu, 'stylish, nil. Set it per-project in .dir-locals."
-    :safe 'symbolp
-    )
 
 
-  :bind (:map haskell-mode-map
-              ("C-c a c" . haskell-cabal-visit-file)
-              ("C-c a i" . haskell-navigate-imports)
-              ("C-c M"   . haskell-compile)
-              ("C-c a I" . haskell-navigate-imports-return))
 
-  :custom
-  (setq haskell_indentation_left_offset 4)
-  (setq haskell_indentation_starter_offset 4)
-  (setq haskell_where_pre_offset 4)
-  (setq haskell_where_post_offset 4)
-  )
+
+
+
+
+
+
+
+
+
+
+
 
 (add-hook 'haskell-mode-hook #'lsp)
 (add-hook 'haskell-literate-mode-hook #'lsp)
-
 
 (use-package rust-mode
   :hook ((rust-mode . lsp)
