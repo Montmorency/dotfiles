@@ -8,7 +8,6 @@
 (setq gc-cons-threshold 100000000)
 (setq use-package-always-ensure t)
 
-
 ;;[association lists](https://www.gnu.org/software/emacs/manual/html_node/elisp/Association-Lists.html)
 
 (custom-set-variables
@@ -152,8 +151,8 @@
 (use-package doom-themes
   :ensure t
   :config
-  (setq doom-challenger-deep-brighter-comments t
-        doom-challenger-deep-brighter-modeline t)
+  :custom (doom-challenger-deep-brighter-comments t)
+          (doom-challenger-deep-brighter-modeline t)
   (doom-themes-org-config)
   (load-theme 'doom-moonlight t)
   )
@@ -172,6 +171,11 @@
 
 (show-paren-mode)
 
+;;getting lispy
+(use-package paredit)
+;;(use-package geiser)
+(use-package slime)
+
 (use-package rainbow-delimiters
   :hook ((prog-mode . rainbow-delimiters-mode)))
 
@@ -184,7 +188,6 @@
   (find-file "~/.emacs"))
 
 (bind-key "C-c e" #'open-init-file)
-
 
 (defun open-cheet-sheet ()
   "Open a personalized Emacs cheat sheet."
@@ -342,6 +345,10 @@ Saves to a temp file and puts the filename in the kill ring."
 ;;and the ivy integration for avy
 (use-package ivy-avy)
 
+
+(use-package emmet-mode)
+(add-hook 'sgml-mode-hook 'emmet-mode) ;; Auto-start on any markup modes
+(add-hook 'css-mode-hook  'emmet-mode) ;; enable Emmet's css abbreviation.
 
 
 (use-package haskell-mode
