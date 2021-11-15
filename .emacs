@@ -141,7 +141,6 @@
   :after all-the-icons
   :hook (dired-mode . all-the-icons-dired-mode))
 
-;;Patrick was... aggressive in his allocation of screenspace to emacs.
 (add-to-list 'default-frame-alist '(fullscreen . 90))
 (when (window-system)
   (tool-bar-mode -1)
@@ -157,6 +156,9 @@
   (load-theme 'doom-moonlight t)
   )
 
+(add-hook 'after-init-hook (lambda () (load-theme 'doom-moonlight t)))
+
+
 ;;(use-package diminish
 ;;  :config (diminish 'eldoc-mode))
 
@@ -169,12 +171,13 @@
   :custom (dimmer-fraction 0.1)
   :config (dimmer-mode))
 
-(show-paren-mode)
 
 ;;getting lispy
-(use-package paredit)
 ;;(use-package geiser)
-(use-package slime)
+;;(use-package slime)
+(use-package paredit)
+
+(show-paren-mode)
 
 (use-package rainbow-delimiters
   :hook ((prog-mode . rainbow-delimiters-mode)))
