@@ -110,8 +110,8 @@
 ;;(unbind-key "C-z") ;; suspend-frame
 ;;(unbind-key "M-o") ;; facemenu-mode
 ;;(unbind-key "<mouse-2>") ;; pasting with mouse-wheel click
-;;(unbind-key "<C-wheel-down>") ;; text scale adjust
-;;(unbind-key "<C-wheel-up>") ;; text scale adjust
+(unbind-key "<C-wheel-down>") ;; text scale adjust
+(unbind-key "<C-wheel-up>") ;; text scale adjust
 
 (add-hook 'before-save-hook #'delete-trailing-whitespace)
 (setq require-final-newline t)
@@ -176,6 +176,7 @@
 ;;(use-package geiser)
 ;;(use-package slime)
 (use-package paredit)
+(use-package tagedit)
 
 (show-paren-mode)
 
@@ -213,12 +214,13 @@ Saves to a temp file and puts the filename in the kill ring."
 (defun insert-current-date ()
   "Insert the current date."
   (interactive)
-  (insert (shell-command-to-string "echo -n $(date)")))
+  (insert (shell-command-to-string "echo -n $(date)"))
+  (newline)
+  (insert "-----------------------------")
+  )
 
 ;;Some HL bindings
 (bind-key "C-c d" #'insert-current-date)
-
-
 
 ;;(bind-key "C-c r" #'replace-string)
 ;;dired related hooks for darwin
@@ -287,6 +289,12 @@ Saves to a temp file and puts the filename in the kill ring."
 ;;See also ace-jump-mode and vim-easymotion - avy uses the same idea.
 ;;;;jump-to-line commands mapped to the home rome
 
+;;(projectile-mode +1)
+;; Recommended keymap prefix on macOS
+;;(define-key projectile-mode-map (kbd "s-p") 'projectile-command-map)
+;; Recommended keymap prefix on Windows/Linux
+;;(define-key projectile-mode-map (kbd "C-c p") 'projectile-command-map)
+
 (use-package counsel
   :init
   (counsel-mode 1)
@@ -294,11 +302,12 @@ Saves to a temp file and puts the filename in the kill ring."
   :bind (("C-c ;" . #'counsel-M-x)
          ("C-c U" . #'counsel-unicode-char)
          ("C-c i" . #'counsel-imenu)
+         ("C-c i" . #'counsel-projectile-grep)
          ("C-x f" . #'counsel-find-file)
          ("C-c y" . #'counsel-yank-pop)
          ("C-c r" . #'counsel-recentf)
          ("C-c v" . #'counsel-switch-buffer-other-window)
-         ("C-c H" . #'counsel-projectile-rg)
+         ("C-c g" . #'counsel-projectile-grep)
          ("C-h h" . #'counsel-command-history)
          ("C-x C-f" . #'counsel-find-file)
          :map ivy-minibuffer-map
@@ -329,11 +338,10 @@ Saves to a temp file and puts the filename in the kill ring."
 (bind-key "C-x k" #'kill-this-buffer)
 (bind-key "C-x K" #'kill-buffer)
 
-
 (use-package magit
   :diminish magit-auto-revert-mode
   :diminish auto-revert-mode
-  :bind (("C-c g" . #'magit-status))
+  :bind (("C-c m" . #'magit-status))
   :custom
   (magit-repository-directories '(("~/src" . 1)))
   :config
@@ -353,6 +361,23 @@ Saves to a temp file and puts the filename in the kill ring."
 (add-hook 'sgml-mode-hook 'emmet-mode) ;; Auto-start on any markup modes
 (add-hook 'css-mode-hook  'emmet-mode) ;; enable Emmet's css abbreviation.
 
+;; https://github.com/magnars/tagedit
+(eval-after-load 'sgml-mode
+  '(progn
+     (require 'tagedit)
+     (tagedit-add-paredit-like-keybindings)
+     (add-hook 'html-mode-hook (lambda () (tagedit-mode 1)))))
+
+;; (define-key html-mode-map (kbd "C-<right>") 'tagedit-forward-slurp-tag)
+;; (define-key html-mode-map (kbd "C-<left>") 'tagedit-forward-barf-tag)
+;; (define-key html-mode-map (kbd "M-r") 'tagedit-raise-tag)
+;; (define-key html-mode-map (kbd "M-s") 'tagedit-splice-tag)
+;; (define-key html-mode-map (kbd "M-J") 'tagedit-join-tags)
+;; (define-key html-mode-map (kbd "M-S") 'tagedit-split-tag)
+;; (define-key html-mode-map (kbd "M-?") 'tagedit-convolute-tags)
+;; (define-key html-mode-map (kbd "C-k") 'tagedit-kill)
+;; (define-key html-mode-map (kbd "s-k") 'tagedit-kill-attribute)
+
 
 (use-package haskell-mode
   :config
@@ -362,13 +387,22 @@ Saves to a temp file and puts the filename in the kill ring."
 ;;  (setq haskell-where-post-offset 4)
 ;;  (setq haskell-indentation-ifte-offset 4)
   :bind (:map haskell-mode-map
-              ("C-c M"   . haskell-compile)
+;;              ("C-c M"   . haskell-compile)
 ;;              ("C-c a c" . haskell-cabal-visit-file)
 ;;              ("C-c a i" . haskell-navigate-imports)
 ;;              ("C-c a I" . haskell-navigate-imports-return)
               )
   )
 
+
+
+(use-package swift-mode)
+(use-package typescript-mode)
+(use-package js2-mode)
+(use-package rjsx-mode)
+(add-to-list 'auto-mode-alist '("\\.ts\\'" . typescript-mode))
+(add-to-list 'auto-mode-alist '("\\.tsx\\'" . rjsx-mode))
+(add-hook 'typescript-mode-hook #'lsp)
 
 (use-package lsp-mode
   :commands (lsp lsp-execute-code-action)
@@ -378,11 +412,21 @@ Saves to a temp file and puts the filename in the kill ring."
          (haskell-mode . lsp))
   :bind ("C-c C-c" . #'lsp-modeline-diagnostics-mode)
   :custom
-  ;;(lsp-keymap-prefix "C-c l") conflicts with avy
   (lsp-diagnostics-modeline-scope :project)
-  (lsp-file-watch-threshold 5000)
+  (lsp-file-watch-threshold 500)
   (lsp-response-timeout 2)
-  (lsp-enable-file-watchers nil))
+  (lsp-enable-file-watchers nil)
+  )
+
+  ;; (lsp-haskell-server-wrapper \(lambda (argv)
+  ;; (append
+  ;;  (append (list \"nix-shell\" \"-I\" \".\" \"--command\" )
+  ;;          (list (mapconcat 'identity argv \" \"))
+  ;;          )
+  ;;  (list (concat (lsp--suggest-project-root) \"/shell.nix\"))
+  ;;  )
+  ;; )
+
 
 ;;https://github.com/emacs-lsp/lsp-ui
 (use-package lsp-ui
@@ -422,32 +466,12 @@ Saves to a temp file and puts the filename in the kill ring."
 ;;  :custom (company-lsp-enable-snippet t)
 ;;  :after (company lsp-mode))
 
-;;Think ivy has more integration with lsp than ido
-;;(require 'ido)
-;;(setq ido-enable-flex-matching t)
-;;(setq ido-everywhere t)
-;;(setq ido-file-extensions-order '(".hs" ".js" ".css" ".md" ".txt"))
-;;(setq ido-ignore-extensions t)
-;;(ido-mode t)
-
-;;(setq haskell-indent-spaces 4)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 (add-hook 'haskell-mode-hook #'lsp)
 (add-hook 'haskell-literate-mode-hook #'lsp)
+;;would like to enable xml-mode by default
+;;https://github.com/haskell/haskell-mode/blob/15c5eb0acafefd90935aced615c3ff68a441e903/haskell-font-lock.el#L526
+(add-hook 'haskell-mode-hook #'emmet-mode)
 
 (use-package rust-mode
   :hook ((rust-mode . lsp)
@@ -457,7 +481,6 @@ Saves to a temp file and puts the filename in the kill ring."
   (rust-format-on-save t)
   (lsp-rust-server 'rust-analyzer))
 
-(use-package typescript-mode)
 (use-package yaml-mode)
 (use-package dockerfile-mode)
 (use-package toml-mode)
@@ -479,6 +502,11 @@ Saves to a temp file and puts the filename in the kill ring."
   (enlarge-window (/ (window-height (next-window)) 2)))
 
 (global-set-key (kbd "C-c v") 'halve-other-window-height)
+
+
+;; (bind-key "C-m h" #'haskell-mode)
+;; (bind-key "C-m x" #'xml-mode)
+;; (bind-key "C-m e" #'emmet-mode)
 
 
 (defun my-default-window-setup ()
